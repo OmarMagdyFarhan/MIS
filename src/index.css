@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root {
+  --color-primary-bg:      #191919;
+  --color-card-bg:         #222222;
+  --color-card-elevated:   #2A2A2A;
+  --color-text-primary:    #E3E3E3;
+  --color-text-secondary:  #A0A0A0;
+  --color-text-tertiary:   #888888;
+  --color-text-placeholder: #666666;
+  --color-accent-blue:     #0A84FF;
+  --color-accent-green:    #30D158;
+  --color-accent-amber:    #FF9F0A;
+  --color-accent-red:      #FF453A;
+  --color-border-default:  rgba(255, 255, 255, 0.08);
+  --color-border-secondary: rgba(255, 255, 255, 0.14);
+  --color-border-tertiary:  rgba(255, 255, 255, 0.05);
+  --color-border-focus:    #0A84FF;
+  --color-selected-fill:   #2A2A2A;
+  --color-selected-border: #0A84FF;
+  --color-disabled-bg:     #2A2A2A;
+  --color-disabled-text:   #555555;
+  --color-example-bg:      #2A2A2A;
+  --color-obsidian:        #E3E3E3;
+  --color-slate-elevated:  #2A2A2A;
+  --color-background-primary:   #191919;
+  --color-background-secondary: #222222;
+  --color-background-tertiary:  #2A2A2A;
+
+  /* PHASE 16.8 — single source-of-truth radius scale.
+     Every component must use one of these three. No ad-hoc rounded-[Npx]. */
+  --radius-sm:   8px;    /* inputs, badges, small buttons */
+  --radius-md:   12px;   /* cards, modals, panels */
+  --radius-full: 9999px; /* pills, avatars, fully-rounded buttons */
+  /* Legacy aliases kept so any remaining old references resolve into the
+     3-step scale instead of drifting back to 20/28/32px. */
+  --border-radius-sm:  8px;
+  --border-radius-md:  12px;
+  --border-radius-lg:  12px;
+  --border-radius-xl:  12px;
+  --border-radius-2xl: 12px;
+
+  /* PHASE 16.8 — 5-step type scale. Every text size in the app maps to one
+     of these, assigned by ROLE, not by local preference. */
+  --text-xs:   11px;  /* labels, badges, meta */
+  --text-sm:   13px;  /* secondary body, captions */
+  --text-base: 15px;  /* primary body */
+  --text-lg:   18px;  /* section titles */
+  --text-xl:   24px;  /* page titles only */
+
+  /* PHASE 16.8 — 5-step spacing scale. */
+  --space-xs:  4px;   /* icon gaps */
+  --space-sm:  8px;   /* inline gaps */
+  --space-md:  16px;  /* component padding */
+  --space-lg:  24px;  /* section gaps */
+  --space-xl:  40px;  /* page sections */
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-primary-bg)] text-[var(--color-text-primary)] font-sans font-medium antialiased selection:bg-[#0A84FF]/10 selection:text-[#0A84FF];
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight text-[var(--color-text-primary)] font-bold;
+  }
+
+  /* Consistent, calmer focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#0A84FF]/50 border-[#0A84FF] transition-all;
+  }
+}
+
+@layer components {
+  .card-premium {
+    @apply bg-[var(--color-card-bg)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] shadow-[0_4px_32px_rgba(0,0,0,0.02)] transition-all duration-300 hover:shadow-[0_8px_48px_rgba(0,0,0,0.06)];
+  }
+
+  .bento-card {
+    @apply bg-[var(--color-card-bg)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] shadow-sm hover:shadow-2xl hover:shadow-[#0A84FF]/5 hover:scale-[1.01] transition-all duration-300 overflow-hidden;
+  }
+
+  .glass-panel {
+    @apply bg-black/40 backdrop-blur-2xl border border-white/10 shadow-sm;
+  }
+
+  .btn-primary {
+    @apply rounded-[var(--radius-full)] px-8 py-3 text-[var(--text-base)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] font-semibold bg-[#0A84FF] text-white hover:bg-[#0A84FF]/90 active:scale-95 disabled:opacity-30 disabled:pointer-events-none shadow-md shadow-[#0A84FF]/20 flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply rounded-[var(--radius-full)] px-8 py-3 text-[var(--text-base)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] font-semibold bg-[#1C1C1E] text-[var(--color-text-primary)] border border-[var(--color-border-secondary)] hover:bg-[#2C2C2E] active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2;
+  }
+
+  .input-premium {
+    @apply rounded-[var(--radius-sm)] border border-[var(--color-border-default)] bg-black/30 px-4 py-3 text-[var(--text-base)] text-[var(--color-text-primary)] transition-all duration-200 focus:border-[var(--color-accent-blue)] focus:ring-2 focus:ring-[var(--color-accent-blue)]/20 focus:outline-none placeholder:text-[var(--color-text-tertiary)];
+  }
+
+  /* Section label — the ONE place uppercase+tracking belongs. */
+  .text-premium-sm {
+    @apply text-[var(--text-xs)] font-medium text-[var(--color-text-tertiary)] uppercase tracking-[0.06em] leading-none;
+  }
+}
+
+/* Layout improvements */
+.matrix-grid {
+  background-image: 
+    radial-gradient(circle at 1px 1px, var(--color-border-default) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-[#0A84FF];
+}
+
+/* Animations */
+@keyframes fadeInMatrix {
+  from { opacity: 0; filter: blur(20px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+.animate-matrix {
+  animation: fadeInMatrix 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}

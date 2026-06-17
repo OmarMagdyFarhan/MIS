@@ -1,0 +1,168 @@
+// Prisma schema — Phase 14.2 (Supabase/PostgreSQL persistence layer)
+// Implements the Three-Lock architecture in the database tier.
+//
+// Lock 1: CorpusVersion (corpus versioning — prevents mid-run corpus mutations)
+// Lock 2: EvidenceMessage (immutable evidence rows tied to a locked corpus version)
+// Lock 3: Avatar (task-type + temperature recorded per generation)
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── Lock 1: Corpus Versioning ───────────────────────────────────────────────
+
+model CorpusVersion {
+  id           String   @id @default(cuid())
+  /// Monotonic version counter — auto-incremented by the DB.
+  version      Int      @unique @default(autoincrement())
+  /// 'active' | 'locked' | 'archived'
+  status       String   @default("active")
+  lockedAt     DateTime @default(now())
+  messageCount Int      @default(0)
+
+  messages EvidenceMessage[]
+  clusters Cluster[]
+  runs     PipelineRun[]
+
+  @@index([status])
+  @@map("corpus_versions")
+}
+
+// ─── Lock 2: Evidence Messages ───────────────────────────────────────────────
+
+model EvidenceMessage {
+  id         String  @id @default(cuid())
+  text       String  @db.Text
+  source     String?
+  /// 'positive' | 'negative' | 'neutral'
+  sentiment  String?
+  confidence Float   @default(0.5)
+
+  corpusVersion   CorpusVersion @relation(fields: [corpusVersionId], references: [id])
+  corpusVersionId String
+
+  clusterMembers ClusterMember[]
+  analyses       AIAnalysis[]
+
+  createdAt DateTime @default(now())
+
+  @@index([corpusVersionId])
+  @@index([sentiment])
+  @@map("evidence_messages")
+}
+
+// ─── Clusters ────────────────────────────────────────────────────────────────
+
+model Cluster {
+  id           String @id @default(cuid())
+  /// Display label — NEVER used as canonical identity (Addendum A §1.1 Source 4)
+  name         String
+  theme        String @db.Text
+  messageCount Int    @default(0)
+  cohesionScore Float @default(0.5)
+
+  corpusVersion   CorpusVersion @relation(fields: [corpusVersionId], references: [id])
+  corpusVersionId String
+
+  members ClusterMember[]
+  avatars Avatar[]
+
+  @@index([corpusVersionId])
+  @@map("clusters")
+}
+
+model ClusterMember {
+  id        String @id @default(cuid())
+  cluster   Cluster         @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  clusterId String
+  message   EvidenceMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+
+  @@unique([clusterId, messageId])
+  @@map("cluster_members")
+}
+
+// ─── Lock 3: Avatars ─────────────────────────────────────────────────────────
+
+model Avatar {
+  id          String @id @default(cuid())
+  name        String
+  description String @db.Text
+  /// JSON array of claims
+  claims      Json   @default("[]")
+
+  cluster   Cluster? @relation(fields: [clusterId], references: [id])
+  clusterId String?
+
+  /// Task type used for generation — enforces the Intent Lock
+  taskType    String @default("structure")
+  /// Temperature recorded at generation time — 0.0 for structure/classification, 0.3 for generation
+  temperature Float  @default(0.0)
+
+  createdAt DateTime @default(now())
+  version   Int      @default(1)
+
+  @@index([clusterId])
+  @@map("avatars")
+}
+
+// ─── AI Analysis Tracking ────────────────────────────────────────────────────
+
+model AIAnalysis {
+  id String @id @default(cuid())
+
+  message   EvidenceMessage @relation(fields: [messageId], references: [id])
+  messageId String
+
+  /// 'classification' | 'structure' | 'generation'
+  taskType    String
+  intent      String @db.Text
+  response    String @db.Text
+  /// Temperature used — recorded for auditability
+  temperature Float
+  /// Latency in milliseconds
+  latency     Int
+
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+  @@index([taskType])
+  @@map("ai_analyses")
+}
+
+// ─── Pipeline Runs ───────────────────────────────────────────────────────────
+
+model PipelineRun {
+  id String @id @default(cuid())
+  /// 'running' | 'completed' | 'failed' | 'aborted'
+  status String @default("running")
+
+  corpusVersion   CorpusVersion @relation(fields: [corpusVersionId], references: [id])
+  corpusVersionId String
+
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  errorMessage String?
+
+  @@index([status])
+  @@map("pipeline_runs")
+}
+
+// ─── Offers ──────────────────────────────────────────────────────────────────
+
+model Offer {
+  id          String @id @default(cuid())
+  title       String
+  description String @db.Text
+  confidence  Float  @default(0.5)
+
+  createdAt DateTime @default(now())
+
+  @@index([confidence])
+  @@map("offers")
+}
